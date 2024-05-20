@@ -9,6 +9,7 @@ from langchain.text_splitter import CharacterTextSplitter
 # [IMPORTANT]
 # Need to install openai and tiktoken
 from langchain.embeddings import OpenAIEmbeddings
+from langchain.vectorstores.chroma import Chroma
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -109,9 +110,9 @@ Process installing a file
   2. Some `pre-processing` on this file before the user asks questions
     - split the loaded data into a bunch of separate chunks
     - calculate `embeddings` for each chunk
-    - store embeddings in a database specialized in storing embeddings (Vector Store)
+    - store each embeddings in a database specialized in storing embeddings (which is called Vector Store)
   3. Then wait for user's question
-  4. When it takes the user's question, will create embedding out of the user's question
+  4. When it takes the user's question, will create embeddings out of the user's question
   5. Do similar search with stored embeddings. We feed that embedding of the question into Vector Store. 
     Rather than store at this time, we are going to ask Vector Store to find maybe the 1, 2, 3 or 4 
     most similar vector that is stored or the most similar embeddings that it has stored.
@@ -121,9 +122,10 @@ Process installing a file
 """
 
 embeddings = OpenAIEmbeddings()
-emb = embeddings.embed_query("hi there")
 
-print(len(emb))  # generates 1536 scores for the text "Hi there"
+# For testing
+# emb = embeddings.embed_query("hi there")
+# print(len(emb))  # generates 1536 scores for the text "Hi there" from OpenAIEmbeddings
 
 # split the file setup
 # take a big  blob of text and break it up into separate little chunks
@@ -145,41 +147,91 @@ text_splitter = CharacterTextSplitter(
 # 1. loading the file
 loader = TextLoader("facts.txt")
 
-
 # 2) After load, it split the file.
 # [IMPORTANT] `text_spitter` is required
 docs = loader.load_and_split(
   text_splitter=text_splitter
 )
 
-# 3) calculate embeddings for the loaded texts (will use it after storing embedding because it is expensive)
-"""
-There are different calculate models out there.
-We will look at 2 models: `SentenceTransformer` and `OpenAI Embeddings`
-
-The below dimensions word means that the list of numbers that scores a piece of text
-on a ton of different qualities, that list of numbers is gonna have 768 elements
-
-`SentenceTransformer` is used in the local machine. (Required processing power)
-    It has several sub different models.These generate the different length
-    For instance, `all-mpnet-base-v2` generates embeddings 768 dimensions.
-
-`OpenAI Embeddings` is used in remote. It generates 1536 dimensions
-
-Which one better? It depends on the usage of our application scenario.
-Each embedding models is not compatible each other.
-
-"""
-
-
-# Store embeddings to Vector Store
-
 for doc in docs:
   # each Document in chunk
   print(doc.page_content)
   print("\n")
 
+# 3) calculate embeddings for the loaded texts (will use it after storing embedding because it is expensive)
+"""
+There are different calculating models out there.
+We will look at 2 models: `SentenceTransformer` and `OpenAI Embeddings`
 
+The below `dimensions` word means that the list of numbers that scores a piece of text
+on a ton of different qualities, that list of numbers is gonna have 768 elements
+
+`SentenceTransformer` is used in the local machine. (Required processing power)
+    It has several sub different models. These generate the different lengths
+    For instance, `all-mpnet-base-v2` generates embeddings 768 dimensions.
+
+`OpenAI Embeddings` is used in remote. It generates 1536 dimensions
+
+Which one better? It depends on the usage of our application scenario.
+Each embedding models is not compatible each other. (can't be used together)
+"""
+
+# Store embeddings to Vector Store (will use ChromaDB)
+"""
+  ChromaDB (open source)
+  This is a vector store on our local machine. Internally, ChromaDB uses SQLite.
+  It also includes a couple of libraries that are gonna do the actual math, all the actual computation
+  to find embeddings similar to the ones that are stored inside of that SQLite database.
+
+  pip install chromadb
+  from langchain.vectorstores.chroma import Chroma
+"""
+
+# Setting ChromaDB instance
+db = Chroma.from_documents(
+  # importing docs for `embeddings`
+  docs,
+  # calculate embeddings using openAIEmbedding solution for each chunk of the texts.
+  # Please notice `embedding`, not `embeddings` for the key argument.
+  embedding=embeddings,
+  # After calculating embeddings, they are going to be placed inside of "" directory
+  persist_directory="emb",
+)
+
+# "ask the question" where what we want to find some documents stored inside of a DB related to.
+
+# 2)
+# set tuples for similarity score and chunks
+# results = db.similarity_search_with_score(
+#   "What is an interesting fact about the English language?",
+#   # the number of result on the basis of the highest similarity
+#   # k=1, 2, 3
+# )
+
+# 1) only for chunk
+results = db.similarity_search(
+  "What is an interesting fact about the English language?",
+  k=1
+)
+
+print("")
+print("------------------ Result -------------------")
+for result in results:
+  print("\n")
+
+  # 2)
+  # It shows chunk by chunk, not line by line with similarity score
+
+  # It is a tuple.
+  # This is the similarity score ("0.3502454302737522")
+  # print(result[1])
+  # print(result[0].page_content)
+
+  # 1) It show chunk only
+  print(result.page_content)
+
+
+# Tomorrow: avoid storing the same data over and over to the DB.
 
 # since we used splitter it has multiple document
 # ex) [Document(question contents with "\n")]
