@@ -211,7 +211,7 @@ db = Chroma.from_documents(
 # 1) only for chunk
 results = db.similarity_search(
   "What is an interesting fact about the English language?",
-  k=1
+  # k=1
 )
 
 print("")
