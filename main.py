@@ -158,6 +158,12 @@ for doc in docs:
   print(doc.page_content)
   print("\n")
 
+
+#  Basic docs format
+# since we used splitter it has multiple document
+# ex) [Document(question contents with "\n")]
+# print(docs)  # See the above comments
+
 # 3) calculate embeddings for the loaded texts (will use it after storing embedding because it is expensive)
 """
 There are different calculating models out there.
@@ -176,7 +182,6 @@ Which one better? It depends on the usage of our application scenario.
 Each embedding models is not compatible each other. (can't be used together)
 """
 
-# Store embeddings to Vector Store (will use ChromaDB)
 """
   ChromaDB (open source)
   This is a vector store on our local machine. Internally, ChromaDB uses SQLite.
@@ -186,6 +191,18 @@ Each embedding models is not compatible each other. (can't be used together)
   pip install chromadb
   from langchain.vectorstores.chroma import Chroma
 """
+
+# 4) store embeddings to Vector Store (will use ChromaDB)
+
+# If we run the app over and over the multiple same records will be accumulated in vector store.
+# We need to break our programs into two separate files. 
+#  The first one is for the steps to store vector
+#  The second one is for the steps for the users to ask question and show its results
+
+# [Steps to create ChromaDB, a vector store]
+# - Delete "emb" directory if it exists.
+# - Run "python main.py" only one time. (creating nothing but uniq embeddings record)
+
 
 # Setting ChromaDB instance
 db = Chroma.from_documents(
@@ -198,6 +215,13 @@ db = Chroma.from_documents(
   persist_directory="emb",
 )
 
+# [Steps for the user to ask questions and for resulting in the answer]
+# - Create a file "prompt.py". This is the file we are going to run anytime we want to ask some question
+#   of ChatGPT and use some content of our vector database to provide some context.
+# - Build "prompt.py"
+
+
+# For testing only. `prompt.py` will ask question instead. ----------------------------------------------
 # "ask the question" where what we want to find some documents stored inside of a DB related to.
 
 # 2)
@@ -209,15 +233,14 @@ db = Chroma.from_documents(
 # )
 
 # 1) only for chunk
-results = db.similarity_search(
-  "What is an interesting fact about the English language?",
-  # k=1
-)
+# results = db.similarity_search(
+#   "What is an interesting fact about the English language?",
+#   # k=1
+# )
 
-print("")
-print("------------------ Result -------------------")
-for result in results:
-  print("\n")
+# print("")
+# for result in results:
+#   print("\n")
 
   # 2)
   # It shows chunk by chunk, not line by line with similarity score
@@ -228,14 +251,8 @@ for result in results:
   # print(result[0].page_content)
 
   # 1) It show chunk only
-  print(result.page_content)
-
-
-# Tomorrow: avoid storing the same data over and over to the DB.
-
-# since we used splitter it has multiple document
-# ex) [Document(question contents with "\n")]
-# print(docs)  # See the above comments
+  # print(result.page_content)
+# ------------------------------------------------------------------------------------------------------
 
 
 
