@@ -15,12 +15,16 @@ from dotenv import load_dotenv
 load_dotenv()
 
 
+"""
+                            [[[ Embeddings Setup to Chroma DB ]]]
+
+"""
+
 # 1) only load a file
 # loader = TextLoader("facts.txt")
 # docs = loader.load()
 
 # print(docs)  # See the above comments
-
 
 # LangChain provides classes to help load data from different types of files from the local machine
 # We need to use a specific loader in terms of a file type
@@ -144,10 +148,10 @@ text_splitter = CharacterTextSplitter(
   chunk_overlap=0
 )
 
-# 1. loading the file
+# (1) loading the file
 loader = TextLoader("facts.txt")
 
-# 2) After load, it split the file.
+# (2) After load, it split the file.
 # [IMPORTANT] `text_spitter` is required
 docs = loader.load_and_split(
   text_splitter=text_splitter
@@ -164,7 +168,7 @@ for doc in docs:
 # ex) [Document(question contents with "\n")]
 # print(docs)  # See the above comments
 
-# 3) calculate embeddings for the loaded texts (will use it after storing embedding because it is expensive)
+# (3) calculate embeddings for the loaded texts (will use it after storing embedding because it is expensive)
 """
 There are different calculating models out there.
 We will look at 2 models: `SentenceTransformer` and `OpenAI Embeddings`
@@ -192,7 +196,7 @@ Each embedding models is not compatible each other. (can't be used together)
   from langchain.vectorstores.chroma import Chroma
 """
 
-# 4) store embeddings to Vector Store (will use ChromaDB)
+# (4) store embeddings to Vector Store (will use ChromaDB)
 
 # If we run the app over and over the multiple same records will be accumulated in vector store.
 # We need to break our programs into two separate files. 
@@ -215,14 +219,39 @@ db = Chroma.from_documents(
   persist_directory="emb",
 )
 
-# [Steps for the user to ask questions and for resulting in the answer]
+# (5) [Steps for the user to ask questions and for resulting in the answer]
 # - Create a file "prompt.py". This is the file we are going to run anytime we want to ask some question
 #   of ChatGPT and use some content of our vector database to provide some context.
 # - Build "prompt.py"
 
+"""
+  How to prevent the same embeddings to be saved in ChromaDB
+  whenever run this main.py?
+
+  Use `EmbeddingsRedundantFilter`.
+  Taking some documents (like fact.txt) and passing them into this class
+  And this class calculates embeddings and then it is going to compare all these embeddings
+  against each other. If any of them are similar, then it will be removed.
+
+  The downside of `EmbeddingsRedundantFilter` is that
+  because it only works against the currently loading documents,
+
+  [at the input step]
+  when the embeddings are already are installed and used,
+  there is no way to recalculate new embeddings against the stored embeddings
+
+  [at the output step]
+  Also, we can't easily insert or inject `EmbeddingsRedundantFilter` into
+  `RetrievalQA Chain to Chroma Retriever` in prompt.py which could be another chance for us
+  to filter out the similar chunk of the answer.
+
+  We will implement the custom retriever at the output step in prompt.py as an workaround.
+  Please, find prompt.py.
+"""
 
 # For testing only. `prompt.py` will ask question instead. ----------------------------------------------
 # "ask the question" where what we want to find some documents stored inside of a DB related to.
+
 
 # 2)
 # set tuples for similarity score and chunks
@@ -253,12 +282,3 @@ db = Chroma.from_documents(
   # 1) It show chunk only
   # print(result.page_content)
 # ------------------------------------------------------------------------------------------------------
-
-
-
-
-
-
-
-
-
