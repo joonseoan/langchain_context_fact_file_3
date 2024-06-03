@@ -1,0 +1,18 @@
+Visualization Embeddings
+- Download jupyter file, `scores.ipynb` inside this project
+- In the vscode extension, install and enable `Jupyter`
+  . This allows us to open up the file inside vscode
+- install install ipykernel and matplotlib
+Go to `scores.ipynb`, find `Run All` button at the top and click it
+
+Then we can get the visualized embeddings whenever we change
+[
+    "The happy child jumped bravely from rock to rock",
+    "The child was not timid and had a good time jumping from rock to rock",
+    "Although filled with great fear, the child jumped from rock to rock",
+    "lemon",
+    "gravity,
+    ..
+    ..
+    ..
+]

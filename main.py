@@ -30,19 +30,19 @@ load_dotenv()
 # We need to use a specific loader in terms of a file type
 # Also, we are sometimes required to install additional packages to use each loader.
 # For instance, in order to use PyPDFLoader, we need to additionally load PyPDF.
+
 """
-txt : TextLoader
-pdf: PyPDFLoader
-json: JSONLoader
-md: Unstructured MarkdownLoader
+txt : TextLoader use langchain.document_loaders
+pdf: PyPDFLoader (need to install PyPDF)
+json: JSONLoader use langchain.document_loaders
+md: UnstructuredMarkdownLoader use langchain.document_loaders
 """
 
 # LangChain also provides class that has ability to point to some remote location where
-# some files are stored and load up them to the code. From the remote storage,
-# we can use a single Loader for any kind of files (by default).
+# some files are stored and load up them to the code.
+# From the remote storage, we can use a single `Loader` for any kind of files (by default).
 # For instance, `S3FileLoader` is able to load a ton of different kinds of files such as
 # json, md, pdf, and txt to Amazon S3 (at once)
-
 
 """
 Process installing a file
@@ -56,7 +56,6 @@ Process installing a file
 ---------------------------------------
 """
 
-
 """
   1) If we insert entire text file into prompt: expensive run time
   2) If we insert only one text fact that matched with the user question:
@@ -64,8 +63,7 @@ Process installing a file
   3) If we insert one by one after splitting up the text by fact:
     It could generate the unrelated answer when the user question is obscure.
 
-
-  Alternative - Semantic Search
+  Alternative - `Semantic Search`
   We are going to understand what the user is trying to get at, what question they are truly trying to ask.
   We are going to use `embeddings`
 
@@ -78,7 +76,7 @@ Process installing a file
   The child is not timid and had a
   good time....                               .5                         .3                       [.5, .3]
 
-  Although filled wi great fear,
+  Although filled with great fear,
   the child jumped from rock to rock          -1                          0 (nothing related)     [-1, 0]
   ---------------------------------------------------------------------------------------
   
@@ -90,7 +88,7 @@ Process installing a file
                 Happy 1
                   |                 *
                   |     *
-  Fear -1 *----------------------- Bravery 1
+  Fear -1 *-------------------- Bravery 1
                   |origin 0
                   |
                 Sad -1
@@ -132,7 +130,7 @@ embeddings = OpenAIEmbeddings()
 # print(len(emb))  # generates 1536 scores for the text "Hi there" from OpenAIEmbeddings
 
 # split the file setup
-# take a big  blob of text and break it up into separate little chunks
+# take a big blob of text and break it up into separate little chunks
 text_splitter = CharacterTextSplitter(
   # tell the `text_splitter` what character we want to attempt to split our text on.
   # In our scenario, new character should be separator
@@ -144,7 +142,7 @@ text_splitter = CharacterTextSplitter(
   # put some kind of copying of text between individual chunk
   # Sometimes the chunk looks awkward. So it puts the number of *last character*
   # to make sure that we do not kind of divide up everything into awkward chunks
-  # It happens normally inn PDF file
+  # It happens normally in PDF file
   chunk_overlap=0
 )
 
@@ -157,16 +155,19 @@ docs = loader.load_and_split(
   text_splitter=text_splitter
 )
 
+#  Basic docs format
+# since we used splitter it has multiple document
+# ex) [
+#   Document(page_content='1. "Dreamt" is the only English....', metatdata={'surce': 'fact.txt'}),
+#   Document(page_content='7. "The letter 'Q'....', metatdata={'surce': 'fact.txt'}),
+# ]
+print(docs)  # See the above comments
+
 for doc in docs:
   # each Document in chunk
   print(doc.page_content)
   print("\n")
 
-
-#  Basic docs format
-# since we used splitter it has multiple document
-# ex) [Document(question contents with "\n")]
-# print(docs)  # See the above comments
 
 # (3) calculate embeddings for the loaded texts (will use it after storing embedding because it is expensive)
 """
@@ -207,6 +208,62 @@ Each embedding models is not compatible each other. (can't be used together)
 # - Delete "emb" directory if it exists.
 # - Run "python main.py" only one time. (creating nothing but uniq embeddings record)
 
+"""
+In LangChain, embeddings are used to represent text data in a numerical format that can be processed 
+by machine learning models. 
+Here's a more detailed explanation of how embeddings are handled in different stages:
+
+[Storing Text Data]
+Initial Calculation of Embeddings:
+  When you store text data in a database or a vector store (such as Pinecone, Weaviate, or FAISS) 
+  using LangChain, embeddings are calculated for each piece of text. 
+  This involves using a pre-trained language model (like OpenAI's models, BERT, etc.) 
+  to convert the text into a vector of numbers. 
+  These vectors are then stored in the database along with the original text.
+
+[Accepting a User Query]
+Recalculation of Embeddings:
+When a user submits a query, LangChain recalculates the embeddings for the query text.
+This step is necessary because the system needs to convert the query into 
+the same numerical format (vector) as the stored text
+to perform `similarity searches` or other operations.
+
+[Workflow]
+Text Storage:
+
+1. Text data is converted to embeddings.
+2. Embeddings and text data are stored in the database/vector store.
+
+Handling a User Query:
+
+1. The user's query is received.
+2. The query is converted into an embedding using the same model that was used for the original text data.
+3. The query embedding is then compared with the stored embeddings to find the most similar texts 
+  or perform other relevant operations.
+
+[Why Recalculate?]
+Recalculating embeddings for the user query is essential because:
+
+- Consistency: The query needs to be in the same vector space as the stored data for meaningful comparison.
+- Dynamic Queries: User queries are dynamic and can vary each time, requiring fresh embeddings 
+for accurate results.
+
+[Example Process]
+Storing Text:
+1. Text: "LangChain is a framework for developing applications using language models."
+2. Embedding: [0.23, -0.15, 0.45, ...] ***** (calculated and stored) *****
+
+User Query:
+1. Query: "What is LangChain?"
+2. Query Embedding: [0.25, -0.14, 0.46, ...] ***** (calculated at query time) *****
+3. Similarity Search: Compare query embedding with stored embeddings to find relevant text.
+
+[Efficiency Considerations]
+Batch Processing: For large datasets, embeddings can be calculated in batches to improve efficiency.
+Caching: Some systems might cache frequently asked queries and their embeddings to speed up response times.
+Understanding this process is crucial for effectively using LangChain and similar frameworks that rely on embeddings for text processing and retrieval.
+
+"""
 
 # Setting ChromaDB instance
 db = Chroma.from_documents(
