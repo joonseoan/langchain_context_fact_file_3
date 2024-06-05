@@ -1,3 +1,4 @@
+# Embeddings contains all types including OpenAIEmbeddings
 from langchain.embeddings.base import Embeddings
 from langchain.vectorstores.chroma import Chroma
 from langchain.schema import BaseRetriever
@@ -47,8 +48,8 @@ class RedundantFilterRetriever(BaseRetriever):
       # and then do the similarity search.
 
       # If it turns out that we happen to already have the embeddings handy like ("emb = embeddings.embed_query("What is an interesting face about...")"), 
-      # so we already calculated the embeddings ahead of time, we can do an identical similarity search but
-      # base it upon a vector or an embedding, So all this is saying, "Hey, Chroma, do not worry about
+      # so **** we already calculated the embeddings **** ahead of time, we can do an identical similarity search but
+      # base it upon a vector or an embedding which is already done, So all this is saying, "Hey, Chroma, do not worry about
       # calculating the embedding I already did it. You do not need to calculate embeddings. Only do
       # similarity search!
 
@@ -63,7 +64,7 @@ class RedundantFilterRetriever(BaseRetriever):
       )
     """
 
-    # take those embeddings and feed them into that
+    # take those embeddings which is already done and feed them into that
     # `max_marginal_relevance_search_by_vector`.
     # `max_marginal_relevance_search_by_vector` returns the list of documents
     # requirements: Chroma instance

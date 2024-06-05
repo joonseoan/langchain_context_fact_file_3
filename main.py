@@ -1,9 +1,3 @@
-# # chat_models for conversational model
-# from langchain.chat_models import ChatOpenAI
-# # To avoid a deprecation warning, we need to update our import
-# from langchain.chains import LLMChain
-# from langchain.prompts import MessagesPlaceholder, HumanMessagePromptTemplate, ChatPromptTemplate
-# from langchain.memory import ConversationSummaryMemory
 from langchain.document_loaders import TextLoader
 from langchain.text_splitter import CharacterTextSplitter
 # [IMPORTANT]
@@ -116,11 +110,10 @@ Process installing a file
   3. Then wait for user's question
   4. When it takes the user's question, will create embeddings out of the user's question
   5. Do similar search with stored embeddings. We feed that embedding of the question into Vector Store. 
-    Rather than store at this time, we are going to ask Vector Store to find maybe the 1, 2, 3 or 4 
+    At this moment, rather than store at this time, we are going to ask Vector Store to find maybe the 1, 2, 3 or 4 
     most similar vector that is stored or the most similar embeddings that it has stored.
   6. Then we are going to get out some very relevant chunk of text
   7. Then we put the chunk into Prompt.
-
 """
 
 embeddings = OpenAIEmbeddings()
@@ -155,21 +148,21 @@ docs = loader.load_and_split(
   text_splitter=text_splitter
 )
 
-#  Basic docs format
+# Basic docs format
 # since we used splitter it has multiple document
 # ex) [
 #   Document(page_content='1. "Dreamt" is the only English....', metatdata={'surce': 'fact.txt'}),
 #   Document(page_content='7. "The letter 'Q'....', metatdata={'surce': 'fact.txt'}),
 # ]
-print(docs)  # See the above comments
+# print(docs)  # See the above comments
 
-for doc in docs:
+# for doc in docs:
   # each Document in chunk
-  print(doc.page_content)
-  print("\n")
+  # print(doc.page_content)
+  # print("\n")
 
 
-# (3) calculate embeddings for the loaded texts (will use it after storing embedding because it is expensive)
+# (3) calculate embeddings for the loaded texts (using OpenAIEmbeddings here)
 """
 There are different calculating models out there.
 We will look at 2 models: `SentenceTransformer` and `OpenAI Embeddings`
@@ -302,7 +295,7 @@ db = Chroma.from_documents(
   `RetrievalQA Chain to Chroma Retriever` in prompt.py which could be another chance for us
   to filter out the similar chunk of the answer.
 
-  We will implement the custom retriever at the output step in prompt.py as an workaround.
+  We will implement the custom retriever at the output step in prompt_using_redundant.py as an workaround.
   Please, find prompt.py.
 """
 
@@ -324,11 +317,15 @@ db = Chroma.from_documents(
 #   # k=1
 # )
 
-# print("")
+# [IMPORTANT]
+# It shows a duplicated answers
+# because main.py runs a several times
+# Therefore, we need to implement `EmbeddingsRedundantFilter`
+# Please find `prompt.using_redundant.py`
 # for result in results:
 #   print("\n")
 
-  # 2)
+  # 2) set tuples for similarity score and chunks
   # It shows chunk by chunk, not line by line with similarity score
 
   # It is a tuple.

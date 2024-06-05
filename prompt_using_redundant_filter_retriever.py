@@ -17,21 +17,12 @@ load_dotenv()
 
 """
 
-# chat model
 chat = ChatOpenAI()
 
-# Definitely, we need to access to ChromaDB whenever the user asks a question.
-
-# Sets up the embedding tool
 embeddings = OpenAIEmbeddings()
 
-# For calculating embedding and finding similarity in ChromaDB
-# we are not going to add documents (splitted chunks of texts) immediately here now.
 db = Chroma(
-  # using the same sqlite db
   persist_directory="emb",
-  # LangChain is just a little bit disorganized
-  # need to use keyword argument (**kargs) should be different, compared to the instance in main.py
   embedding_function=embeddings,
 )
 
@@ -51,7 +42,7 @@ a base class of `BaseRetriever`. It has to have:
 
 test: 1) run python main.py and add the same embedding several times
       2) set debug mode like the one above
-      3) ren prompt_using_redundant.....py
+      3) run prompt_using_redundant.....py
       4) we can't find the duplicate answers in `context` property below
 """
 """
@@ -75,27 +66,24 @@ test: 1) run python main.py and add the same embedding several times
 }
 
 """
+
+# 2)
 retriever = RedundantFilterRetriever(
   embeddings=embeddings,
   chroma=db,
 )
 
+# 1)
 # For testing to see if the duplicate context chunks are available (should have them) it has
 # retriever = db.as_retriever()
 
 chain = RetrievalQA.from_chain_type(
   llm=chat,
   retriever=retriever,
-  # We takes the relevant documents from vector store and then that document is placed 
-  # at {fact} to be used to answer the user's question in SystemMessagePromptTemplate. 
-  # (FYI, And the user's question is going to be at {question} in HumanMessagePromptTemplate)
-  # So we are really just taking these documents out of the vector store and kind of shoving them into or
-  # injecting them, or stuffing them, into the SystemMessageTemplate. That is what the term `chain_type="stuff"`
   chain_type="stuff"
 )
 
 result = chain.run("What is an interesting fact about the English language?")
-# Use python prompt.py
 print(result)
 
 
